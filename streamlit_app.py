@@ -3,6 +3,8 @@ import streamlit as st
 import openai
 from hh_parser import get_candidate_info, get_job_description
 
+# Проверка версии OpenAI SDK
+st.write(f"OpenAI Library Version: {openai.__version__}")
 
 # Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
