@@ -1,25 +1,16 @@
 import os
-import sys
 import streamlit as st
 import openai
+from hh_parser import get_candidate_info, get_job_description
 
-# Добавление пути для импорта, если файл parser_hh.py находится в другой директории
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-try:
-    from hh_parser import get_candidate_info, get_job_description
-except ImportError as e:
-    st.error(f"Failed to import module: {e}")
-    st.stop()
-
-# Установить API-ключ OpenAI
+# Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
 if not openai.api_key:
     st.error("OPENAI_API_KEY is not set. Please configure it in the environment variables.")
     st.stop()
 
-# Системное сообщение для GPT
+# System prompt for GPT
 SYSTEM_PROMPT = """
 Проскорь кандидата, насколько он подходит для данной вакансии.
 
@@ -28,11 +19,11 @@ SYSTEM_PROMPT = """
 Потом представь результат в виде оценки от 1 до 10.
 """.strip()
 
-# Функция для запроса к OpenAI
+# Function to request GPT completion
 def request_gpt(system_prompt, user_prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4",  # Ensure your API key has access to this model
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -44,7 +35,7 @@ def request_gpt(system_prompt, user_prompt):
     except Exception as e:
         return f"Error: {e}"
 
-# Интерфейс Streamlit
+# Streamlit interface
 st.title("CV Scoring App")
 
 job_description_url = st.text_area("Enter the job description URL", placeholder="Paste the job description URL here")
@@ -56,12 +47,12 @@ if st.button("Score CV"):
     else:
         with st.spinner("Scoring CV..."):
             try:
-                # Получение описания вакансии
+                # Fetch job description
                 job_description = get_job_description(job_description_url)
                 if not job_description:
                     raise ValueError("Failed to extract job description. The page structure may have changed.")
 
-                # Получение информации о кандидате
+                # Fetch candidate information
                 cv = get_candidate_info(cv_url)
                 if not cv:
                     raise ValueError("Failed to extract CV. The page structure may have changed.")
@@ -71,7 +62,7 @@ if st.button("Score CV"):
                 st.write("### CV:")
                 st.write(cv)
 
-                # Формирование запроса к GPT
+                # Prepare prompt for GPT
                 user_prompt = f"# ВАКАНСИЯ\n{job_description}\n\n# РЕЗЮМЕ\n{cv}"
                 response = request_gpt(SYSTEM_PROMPT, user_prompt)
 
@@ -80,8 +71,6 @@ if st.button("Score CV"):
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
-
-
 
 
 
